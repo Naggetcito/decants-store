@@ -1,0 +1,318 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Tokens dark luxury. Valores HSL sin envoltorio (los consume tailwind.config.ts).
+ *   ink   #0A0A0B   fondo
+ *   cream #FAF7F2   texto
+ *   gold  #C9A86A   acento
+ * El sitio es solo oscuro: los tokens viven en :root (sin clase .dark).
+ */
+@layer base {
+  :root {
+    --ink: 240 5% 4%;
+    --cream: 38 44% 96%;
+    --gold: 39 47% 60%;
+    --gold-light: 41 52% 74%;
+    --gold-deep: 38 38% 42%;
+
+    --background: var(--ink);
+    --foreground: var(--cream);
+    --card: 30 8% 6.5%;
+    --card-foreground: var(--cream);
+    --popover: 30 7% 8.5%;
+    --popover-foreground: var(--cream);
+    --primary: var(--gold);
+    --primary-foreground: var(--ink);
+    --secondary: 30 6% 11%;
+    --secondary-foreground: var(--cream);
+    --muted: 30 6% 10%;
+    --muted-foreground: 36 14% 66%;
+    --accent: 39 30% 13%;
+    --accent-foreground: var(--cream);
+    --destructive: 0 62% 55%;
+    --destructive-foreground: var(--cream);
+    --border: 36 16% 16%;
+    --input: 36 14% 22%;
+    --ring: var(--gold);
+    --radius: 0.375rem;
+
+    color-scheme: dark;
+  }
+
+  * {
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scrollbar-color: hsl(var(--gold-deep) / 0.6) hsl(var(--ink));
+    scrollbar-width: thin;
+    accent-color: hsl(var(--gold));
+    caret-color: hsl(var(--gold));
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    min-height: 100dvh;
+  }
+
+  /* Grano fino, como papel fotográfico: quita el negro "digital" plano. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display font-medium tracking-tight;
+    text-wrap: balance;
+  }
+
+  /* Los enlaces del Navbar (/#catalogo) no deben quedar tapados por el header sticky */
+  [id] {
+    scroll-margin-top: 5rem;
+  }
+
+  a {
+    text-underline-offset: 0.25em;
+    text-decoration-thickness: 1px;
+  }
+
+  ::selection {
+    background: hsl(var(--gold) / 0.35);
+    color: hsl(var(--cream));
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--gold));
+    outline-offset: 2px;
+  }
+
+  /* Evita el zoom automático de iOS al enfocar inputs */
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+@layer components {
+  /* Playfair usa por defecto números de texto: "10ml" se lee como "1oml". */
+  .font-display {
+    font-variant-numeric: lining-nums;
+  }
+
+  /* Playfair itálica viene de su propia instancia (sin preload). */
+  .font-display.italic {
+    font-family: var(--font-playfair-italic), theme("fontFamily.display");
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* Bordes que se desvanecen en carruseles y marquesinas */
+  .mask-fade-x {
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .animate-marquee {
+    animation: marquee 45s linear infinite;
+    will-change: transform;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .animate-marquee:hover {
+      animation-play-state: paused;
+    }
+  }
+
+  /* Hero: un solo momento orquestado (palabras → texto → CTAs), en CSS para no esperar a JS */
+  .hero-word {
+    display: inline-block;
+    animation: hero-word 650ms theme("transitionTimingFunction.out-strong") both;
+    animation-delay: calc(120ms + var(--i, 0) * 50ms);
+  }
+  .hero-rise {
+    animation: hero-rise 500ms theme("transitionTimingFunction.out-strong") both;
+    animation-delay: var(--d, 0ms);
+  }
+  /* Solo transform: la foto (LCP) es visible desde el primer pintado */
+  .hero-zoom {
+    animation: hero-zoom 1600ms theme("transitionTimingFunction.out-strong") both;
+  }
+}
+
+/*
+ * Material líquido. La superficie es una máscara de onda (un período de 48px) sobre un
+ * relleno sólido; la onda corre en horizontal solo mientras el líquido está a la vista.
+ */
+:root {
+  --liquid-wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 9' preserveAspectRatio='none'%3E%3Cpath d='M0 5 Q12 0 24 5 T48 5 V9 H0Z'/%3E%3C/svg%3E");
+  /* Resortes: el líquido rebota un poco al asentarse (fallback cubic-bezier si no hay linear()) */
+  --ease-slosh: cubic-bezier(0.34, 1.35, 0.64, 1);
+  --ease-slosh: linear(0, 0.045 2.5%, 0.161 5%, 0.32 7.5%, 0.498 10%, 0.675 12.5%, 0.836 15%, 0.972 17.5%, 1.076 20%, 1.148 22.5%, 1.19 25%, 1.205 27.5%, 1.199 30%, 1.177 32.5%, 1.146 35%, 1.109 37.5%, 1.073 40%, 1.039 42.5%, 1.01 45%, 0.988 47.5%, 0.972 50%, 0.962 52.5%, 0.958 55%, 0.963 60%, 0.976 65%, 0.991 70%, 1.002 75%, 1.008 80%, 1.009 85%, 1.005 92.5%, 1);
+  --ease-pour: cubic-bezier(0.22, 1.1, 0.36, 1);
+  --ease-pour: linear(0, 0.033 2.5%, 0.115 5%, 0.229 7.5%, 0.358 10%, 0.49 12.5%, 0.615 15%, 0.729 17.5%, 0.827 20%, 0.908 22.5%, 0.971 25%, 1.018 27.5%, 1.051 30%, 1.071 32.5%, 1.081 35%, 1.083 37.5%, 1.08 40%, 1.063 45%, 1.041 50%, 1.021 55%, 1.007 60%, 0.998 65%, 0.994 70%, 0.993 77.5%, 0.996 85%, 0.999 95%, 1);
+}
+
+.liquid-surface {
+  -webkit-mask:
+    var(--liquid-wave) 0 0 / 48px 9px repeat-x,
+    linear-gradient(#000 0 0) 0 8px / 100% 100% no-repeat;
+  mask:
+    var(--liquid-wave) 0 0 / 48px 9px repeat-x,
+    linear-gradient(#000 0 0) 0 8px / 100% 100% no-repeat;
+}
+
+/* Selector 5ml/10ml: el líquido sube hasta el nivel del tamaño y rebota al asentarse. */
+.size-liquid {
+  position: absolute;
+  inset: -9px 0 0;
+  z-index: -1;
+  background: linear-gradient(hsl(var(--gold) / 0.26), hsl(var(--gold) / 0.12));
+  transform: translateY(101%);
+  transition: transform 520ms cubic-bezier(0.4, 0, 1, 1);
+}
+.size-liquid[data-filled] {
+  transform: translateY(calc((100% - 9px) * (1 - var(--level))));
+  transition: transform 900ms var(--ease-slosh) 80ms;
+  animation: liquid-wave 2600ms linear infinite;
+}
+
+/*
+ * Botón que se llena de líquido: al pasar el puntero (desktop) o al presionar (móvil)
+ * sube el líquido con su onda; al soltar, se vacía más lento.
+ */
+.liquid-fill {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.liquid-fill::before {
+  content: "";
+  position: absolute;
+  inset: -9px 0 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--liquid, hsl(var(--gold) / 0.18));
+  -webkit-mask:
+    var(--liquid-wave) 0 0 / 48px 9px repeat-x,
+    linear-gradient(#000 0 0) 0 8px / 100% 100% no-repeat;
+  mask:
+    var(--liquid-wave) 0 0 / 48px 9px repeat-x,
+    linear-gradient(#000 0 0) 0 8px / 100% 100% no-repeat;
+  transform: translateY(101%);
+  transition: transform 650ms var(--ease-pour);
+}
+.liquid-fill:active::before {
+  transform: translateY(0);
+  transition-duration: 220ms;
+  animation: liquid-wave 900ms linear infinite;
+}
+@media (hover: hover) and (pointer: fine) {
+  .liquid-fill:hover::before {
+    transform: translateY(0);
+    animation: liquid-wave 1400ms linear infinite;
+  }
+}
+
+@keyframes liquid-wave {
+  to {
+    -webkit-mask-position: 48px 0, 0 8px;
+    mask-position: 48px 0, 0 8px;
+  }
+}
+
+/*
+ * Revelado de tinta: la foto aparece desde abajo a través de una mancha líquida que
+ * se expande, mientras se asienta (escala y desenfoque) como al salir del agua.
+ */
+.ink-reveal[data-ink="armed"],
+.ink-reveal[data-ink="shown"] {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 6c9 0 13 7 20 9s15 0 19 8-3 14-1 22 9 13 6 21-12 9-17 15-6 14-14 15-12-5-20-5-13 7-21 3-7-12-12-17-13-8-13-16 8-12 8-20-6-13-1-19 13-2 19-6 8-10 17-10z'/%3E%3C/svg%3E")
+    50% 100% / 0% 0% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 6c9 0 13 7 20 9s15 0 19 8-3 14-1 22 9 13 6 21-12 9-17 15-6 14-14 15-12-5-20-5-13 7-21 3-7-12-12-17-13-8-13-16 8-12 8-20-6-13-1-19 13-2 19-6 8-10 17-10z'/%3E%3C/svg%3E")
+    50% 100% / 0% 0% no-repeat;
+}
+.ink-reveal[data-ink="armed"] > * {
+  transform: scale(1.14);
+  filter: blur(8px);
+}
+.ink-reveal[data-ink="shown"] {
+  animation: ink-spread 1100ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ink-reveal[data-ink="shown"] > * {
+  animation: ink-settle 1300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes ink-spread {
+  to {
+    -webkit-mask-size: 340% 340%;
+    mask-size: 340% 340%;
+  }
+}
+@keyframes ink-settle {
+  from {
+    transform: scale(1.14);
+    filter: blur(8px);
+  }
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes hero-word {
+  from {
+    transform: translateY(105%);
+    opacity: 0;
+  }
+}
+@keyframes hero-rise {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}
+@keyframes hero-zoom {
+  from {
+    transform: scale(1.08);
+  }
+}
+
+/* Movimiento reducido: sin desplazamientos ni escalas; quedan fundidos cortos. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-property: opacity !important;
+    transition-duration: 150ms !important;
+  }
+  [class*="active:scale"]:active {
+    transform: none !important;
+  }
+  .animate-marquee {
+    animation: none !important;
+  }
+}

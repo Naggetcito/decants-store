@@ -1,0 +1,7 @@
+# Netlify: construye el sitio y publica la carpeta out/ (la exportación estática de Next.js).
+[build]
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "22"

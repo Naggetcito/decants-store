@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude plugin *)",
+      "PowerShell(claude plugin install claude-code-setup@claude-plugins-official)"
+    ]
+  }
+}
